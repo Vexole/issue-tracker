@@ -1,29 +1,36 @@
-const initialIssues = [
-  {
-    id: 1,
-    status: 'New',
-    owner: 'Ravan',
-    effort: 5,
-    created: new Date('2018-08-15'),
-    due: undefined,
-    title: 'Error in console when clicking Add',
-  },
-  {
-    id: 2,
-    status: 'Assigned',
-    owner: 'Eddie',
-    effort: 14,
-    created: new Date('2018-08-16'),
-    due: new Date('2018-08-30'),
-    title: 'Missing bottom border on panel',
-  },
-];
+const dateRegex = new RegExp('^\\d\\d\\d\\d-\\d\\d-\\d\\d');
+function jsonDateReviver(key, value) {
+  if (dateRegex.test(value)) return new Date(value);
+  return value;
+}
 
-class IssueFilter extends React.Component {
-  render() {
-    return <h1>Issue Filter Component</h1>;
+async function graphQLFetch(query, variables = {}) {
+  try {
+    const response = await fetch('/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    const body = await response.text();
+    const result = JSON.parse(body, jsonDateReviver);
+    if (result.errors) {
+      const error = result.errors[0];
+      if (error.extensions.code == 'BAD_USER_INPUT') {
+        const details = error.extensions.exception.errors.join('\n ');
+        alert(`${error.message}:\n ${details}`);
+      } else {
+        alert(`${error.extensions.code}: ${error.message}`);
+      }
+    }
+    return result.data;
+  } catch (e) {
+    alert(`Error in sending data to server: ${e.message}`);
   }
 }
+
+const IssueFilter = (props) => {
+  return <h1>Issue Filter Component</h1>;
+};
 
 const IssueRow = (props) => {
   const { id, title, status, owner, created, effort, due } = props.issue;
@@ -63,68 +70,137 @@ const IssueTable = (props) => {
   );
 };
 
-class IssueAdd extends React.Component {
-  constructor() {
-    super();
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
-
-  handleSubmit(e) {
+const IssueAdd = (props) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const form = document.forms.issueAdd;
     const issue = {
       owner: form.owner.value,
       title: form.title.value,
-      status: 'New',
     };
-    this.props.createIssue(issue);
+    props.createIssue(issue);
     form.owner.value = '';
     form.title.value = '';
-  }
+  };
 
-  render() {
-    return (
-      <form name="issueAdd" onSubmit={this.handleSubmit}>
-        <input type="text" name="owner" placeholder="Owner" />
-        <input type="text" name="title" placeholder="Title" />
-        <button>Add</button>
-      </form>
-    );
-  }
-}
+  return (
+    <form name="issueAdd" onSubmit={handleSubmit}>
+      <input type="text" name="owner" placeholder="Owner" />
+      <input type="text" name="title" placeholder="Title" />
+      <button>Add</button>
+    </form>
+  );
+};
 
-class IssueList extends React.Component {
-  constructor() {
-    super();
-    this.state = { issues: [] };
-  }
+const IssueList = (props) => {
+  const [issues, setIssues] = React.useState([]);
 
-  componentDidMount() {
-    this.loadData();
-  }
+  React.useEffect(() => {
+    loadData();
+  }, []);
 
-  loadData() {
-    setTimeout(() => {
-      this.setState({ issues: initialIssues });
-    }, 500);
-  }
+  const loadData = async () => {
+    const query = `query {
+        issueList {
+          id title status owner
+        created effort due
+        }
+      }`;
 
-  createIssue(issue) {
-    issue.id = this.state.issues.length + 1;
-    issue.created = new Date();
-    this.setState({ issues: [...this.state.issues, issue] });
-  }
+    const data = await graphQLFetch(query);
+    if (data) {
+      setIssues(data.issueList);
+    }
+  };
 
-  render() {
-    return (
-      <>
-        <IssueFilter />
-        <IssueTable issues={this.state.issues} />
-        <IssueAdd createIssue={this.createIssue.bind(this)} />
-      </>
-    );
-  }
-}
+  const createIssue = async (issue) => {
+    issue.due = new Date(
+      new Date().getTime() + 1000 * 60 * 60 * 24 * 10
+    ).toISOString();
+
+    const query = `mutation AddIssue($issue: IssueInputs!) {
+      addIssue(issue: $issue) {
+        id
+      }
+    }`;
+
+    const data = await graphQLFetch(query, { issue });
+    if (data) {
+      loadData();
+    }
+  };
+
+  return (
+    <>
+      <IssueFilter />
+      <IssueTable issues={issues} />
+      <IssueAdd createIssue={createIssue} />
+    </>
+  );
+};
 
 const element = <IssueList />;
 ReactDOM.render(element, document.getElementById('contents'));
+
+// class IssueAdd extends React.Component {
+//   constructor() {
+//     super();
+//     this.handleSubmit = this.handleSubmit.bind(this);
+//   }
+
+//   handleSubmit(e) {
+//     e.preventDefault();
+//     const form = document.forms.issueAdd;
+//     const issue = {
+//       owner: form.owner.value,
+//       title: form.title.value,
+//       status: 'New',
+//     };
+//     this.props.createIssue(issue);
+//     form.owner.value = '';
+//     form.title.value = '';
+//   }
+
+//   render() {
+//     return (
+//       <form name="issueAdd" onSubmit={this.handleSubmit}>
+//         <input type="text" name="owner" placeholder="Owner" />
+//         <input type="text" name="title" placeholder="Title" />
+//         <button>Add</button>
+//       </form>
+//     );
+//   }
+// }
+
+// class IssueList extends React.Component {
+//   constructor() {
+//     super();
+//     this.state = { issues: [] };
+//   }
+
+//   componentDidMount() {
+//     this.loadData();
+//   }
+
+//   loadData() {
+//     setTimeout(() => {
+//       this.setState({ issues: initialIssues });
+//     }, 500);
+//   }
+
+//   createIssue(issue) {
+//     issue.id = this.state.issues.length + 1;
+//     issue.created = new Date();
+//     this.setState({ issues: [...this.state.issues, issue] });
+//   }
+
+//   render() {
+//     return (
+//       <>
+//         <IssueFilter />
+//         <IssueTable issues={this.state.issues} />
+//         <IssueAdd createIssue={this.createIssue.bind(this)} />
+//       </>
+//     );
+//   }
+// }

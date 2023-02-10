@@ -4,14 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon -w server server/index.js",
+    "start": "nodemon -w server -e js,graphql server/index.js",
     "compile": "babel src --presets @babel/react --out-dir public",
     "watch": "babel src --presets @babel/react --out-dir public --watch --verbose"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2"
+    "apollo-server": "^3.11.1",
+    "express": "^4.18.2",
+    "graphql": "^16.6.0",
+    "graphql-tools": "^8.3.16",
+    "mongodb": "^5.0.1",
+    "mongoose": "^6.9.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.20",
