@@ -1,30 +1,14 @@
 let aboutMessage = 'Hello World';
-const issues = [
-  {
-    id: 1,
-    status: 'New',
-    owner: 'Ravan',
-    effort: 5,
-    created: new Date('2018-08-15'),
-    due: undefined,
-    title: 'Error in console when clicking Add',
-  },
-  {
-    id: 2,
-    status: 'Assigned',
-    owner: 'Eddie',
-    effort: 14,
-    created: new Date('2018-08-16'),
-    due: new Date('2018-08-30'),
-    title: 'Missing bottom border on panel',
-  },
-];
+const URL =
+  'mongodb+srv://bshrestha:03Md5BsmF2IiCGO9@cluster0.fm67amd.mongodb.net/issue_tracker';
 
 const express = require('express');
+const mongoose = require('mongoose');
 const fs = require('fs');
 const { ApolloServer, UserInputError } = require('apollo-server-express');
 const { GraphQLScalarType } = require('graphql');
 const { Kind } = require('graphql/language');
+const { getIssuesList, insertIssue, seedData } = require('./db');
 
 const PORT = 3000;
 
@@ -66,16 +50,14 @@ function getMessage() {
   return aboutMessage;
 }
 
-function getIssues() {
-  return issues;
+async function getIssues() {
+  return getIssuesList();
 }
 
 function addIssue(_, { issue }) {
-  issue.id = issues.length + 1;
   issue.created = new Date();
   validateIssue(issue);
-  issues.push(issue);
-  return issue;
+  return insertIssue(issue);
 }
 
 function validateIssue(issue) {
@@ -101,8 +83,23 @@ const server = new ApolloServer({
 });
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+mongoose.set('strictQuery', false);
+mongoose.connect(URL, { useNewUrlParser: true });
+
 server.start().then((res) => {
   server.applyMiddleware({ app, path: '/graphql' });
 });
-app.listen(PORT, () => console.log(`Listening on PORT ${PORT}`));
+
+(async function () {
+  try {
+    await seedData();
+    app.listen(PORT, function () {
+      console.log('App started on port 3000');
+    });
+  } catch (err) {
+    console.log('ERROR:', err);
+  }
+})();
