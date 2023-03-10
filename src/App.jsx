@@ -1,3 +1,8 @@
+import 'babel-polyfill';
+import 'whatwg-fetch';
+import React from 'react';
+import ReactDOM from 'react-dom';
+
 const dateRegex = new RegExp('^\\d\\d\\d\\d-\\d\\d-\\d\\d');
 function jsonDateReviver(key, value) {
   if (dateRegex.test(value)) return new Date(value);

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
 
 const IssueSchema = mongoose.Schema({
   id: {
@@ -15,8 +14,5 @@ const IssueSchema = mongoose.Schema({
   due: Date,
 });
 
-IssueSchema.plugin(uniqueValidator, {
-  message: '{PATH} must be unique. Please try with different value.',
-});
 const IssueModel = mongoose.model('Issue', IssueSchema);
 module.exports = IssueModel;
