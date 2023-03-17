@@ -33,12 +33,13 @@ async function getNextSequence(name) {
   const result = await Counter.findOneAndUpdate(
     { _id: name },
     { $inc: { current: 1 } },
-    { returnOriginal: false }
+    { returnOriginal: false },
   );
   return result.current;
 }
 
-async function insertIssue(issue) {
+async function insertIssue(argIssue) {
+  const issue = { ...argIssue };
   issue.id = await getNextSequence('issues');
   const result = await Issue.create(issue);
   const savedIssue = await Issue.findById(result._id);
@@ -46,8 +47,8 @@ async function insertIssue(issue) {
 }
 
 async function getIssuesList() {
-  const issues = await Issue.find({});
-  return issues;
+  const issuesList = await Issue.find({});
+  return issuesList;
 }
 
 module.exports = { seedData, insertIssue, getIssuesList };
