@@ -1,11 +1,20 @@
 import 'babel-polyfill';
 import 'whatwg-fetch';
 import React from 'react';
-import ReactDOM from 'react-dom';
-import IssueList from './IssueList.jsx';
+import { createRoot } from 'react-dom/client';
+import { HashRouter as Router } from 'react-router-dom';
+import Page from './Page.jsx';
 
-const element = <IssueList />;
-ReactDOM.render(element, document.getElementById('contents'));
+const element = (
+  <Router>
+    <Page />
+  </Router>
+);
+
+const root = createRoot(document.getElementById('contents'));
+root.render(element);
+
+// ReactDOM.render(element, document.getElementById('contents'));
 
 // class IssueAdd extends React.Component {
 //   constructor() {

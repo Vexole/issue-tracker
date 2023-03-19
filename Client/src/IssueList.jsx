@@ -3,11 +3,17 @@ import graphQLFetch from './graphQLFetch.js';
 import IssueFilter from './IssueFilter.jsx';
 import IssueTable from './IssueTable.jsx';
 import IssueAdd from './IssueAdd.jsx';
+import { useParams } from 'react-router-dom';
 
-export default function IssueList(props) {
+function getParam(Param) {
+  return (c) => <Param {...c} params={useParams()} />;
+}
+
+function IssueList(props) {
   const [issues, setIssues] = React.useState([]);
 
   React.useEffect(() => {
+    console.log(props);
     loadData();
   }, []);
 
@@ -49,4 +55,6 @@ export default function IssueList(props) {
       <IssueAdd createIssue={createIssue} />
     </>
   );
-};
+}
+
+export default getParam(IssueList);
